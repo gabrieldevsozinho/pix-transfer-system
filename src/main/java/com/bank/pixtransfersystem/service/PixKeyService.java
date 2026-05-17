@@ -6,6 +6,7 @@ import com.bank.pixtransfersystem.domain.enums.PixKeyType;
 import com.bank.pixtransfersystem.dto.request.CreatePixKeyRequest;
 import com.bank.pixtransfersystem.dto.response.PixKeyResponse;
 import com.bank.pixtransfersystem.exception.BusinessException;
+import com.bank.pixtransfersystem.exception.ConflictException;
 import com.bank.pixtransfersystem.exception.ResourceNotFoundException;
 import com.bank.pixtransfersystem.repository.PixKeyRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,12 +29,15 @@ public class PixKeyService {
 
     @Transactional
     public PixKeyResponse create(CreatePixKeyRequest request) {
-        if (pixKeyRepository.existsByKeyValue(resolveKeyValue(request))) {
-            throw new BusinessException("Chave PIX já cadastrada");
-        }
+        String keyValue = resolveKeyValue(request);
+        pixKeyRepository.findByKeyValueAndActiveTrue(keyValue).ifPresent(existing -> {
+            throw new ConflictException(
+                "Chave PIX já cadastrada",
+                PixKeyResponse.from(existing)
+            );
+        });
 
         Account account = accountService.getOrThrow(request.accountId());
-        String keyValue = resolveKeyValue(request);
 
         PixKey pixKey = PixKey.builder()
                 .account(account)

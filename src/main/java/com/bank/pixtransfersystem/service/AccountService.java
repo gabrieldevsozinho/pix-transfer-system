@@ -3,7 +3,7 @@ package com.bank.pixtransfersystem.service;
 import com.bank.pixtransfersystem.domain.entity.Account;
 import com.bank.pixtransfersystem.dto.request.CreateAccountRequest;
 import com.bank.pixtransfersystem.dto.response.AccountResponse;
-import com.bank.pixtransfersystem.exception.BusinessException;
+import com.bank.pixtransfersystem.exception.ConflictException;
 import com.bank.pixtransfersystem.exception.ResourceNotFoundException;
 import com.bank.pixtransfersystem.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +21,12 @@ public class AccountService {
 
     @Transactional
     public AccountResponse create(CreateAccountRequest request) {
-        if (accountRepository.existsByCpf(request.cpf())) {
-            throw new BusinessException("CPF já possui conta cadastrada: " + request.cpf());
-        }
+        accountRepository.findByCpf(request.cpf()).ifPresent(existing -> {
+            throw new ConflictException(
+                "CPF já possui conta cadastrada",
+                AccountResponse.from(existing)
+            );
+        });
         Account account = Account.builder()
                 .ownerName(request.ownerName())
                 .cpf(request.cpf())
