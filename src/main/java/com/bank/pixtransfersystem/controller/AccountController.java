@@ -8,13 +8,17 @@ import com.bank.pixtransfersystem.service.LedgerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+@Validated
 @RestController
 @RequestMapping("/api/accounts")
 @RequiredArgsConstructor
@@ -35,6 +39,14 @@ public class AccountController {
     @Operation(summary = "Consultar conta")
     public AccountResponse findById(@PathVariable UUID id) {
         return accountService.findById(id);
+    }
+
+    @PostMapping("/{id}/deposit")
+    @Operation(summary = "Depositar valor na conta")
+    public AccountResponse deposit(
+            @PathVariable UUID id,
+            @RequestParam @DecimalMin(value = "0.01", message = "Valor mínimo é R$ 0,01") BigDecimal amount) {
+        return accountService.deposit(id, amount);
     }
 
     @GetMapping("/{id}/ledger")
